@@ -126,7 +126,7 @@ class DigikeyHttpClient
         $responseData = $data ?? new \stdClass();
         $rateLimitHeaders = $this->extractRateLimitHeaders($response);
         if (!empty($rateLimitHeaders)) {
-            $responseData->rate_limit = (object) $rateLimitHeaders;
+            $responseData->RateLimit = (object) $rateLimitHeaders;
         }
         return $responseData;
     }
