@@ -17,7 +17,7 @@ class DigikeyApiService
      */
     public function searchKeyword(array $searchRequest): object
     {
-        return $this->client->post('/search/keyword', $searchRequest);
+        return $this->client->post('/products/v4/search/keyword', $searchRequest);
     }
 
     /**
@@ -27,16 +27,13 @@ class DigikeyApiService
     public function getProductDetails(string $productNumber, array $includes = [], array $excludes = []): object
     {
         $query = [];
-
         if (!empty($includes)) {
             $query['includes'] = implode(',', $includes);
         }
-
         if (!empty($excludes)) {
             $query['excludes'] = implode(',', $excludes);
         }
-
-        return $this->client->get("/search/{$productNumber}/productdetails", $query);
+        return $this->client->get("/products/v4/search/{$productNumber}/productdetails", $query);
     }
 
     /**
@@ -45,7 +42,7 @@ class DigikeyApiService
      */
     public function getManufacturers(): object
     {
-        return $this->client->get('/search/manufacturers');
+        return $this->client->get('/products/v4/search/manufacturers');
     }
 
     /**
@@ -54,7 +51,7 @@ class DigikeyApiService
      */
     public function getCategories(): object
     {
-        return $this->client->get('/search/categories');
+        return $this->client->get('/products/v4/search/categories');
     }
 
     /**
@@ -63,7 +60,7 @@ class DigikeyApiService
      */
     public function getCategoryDetails(int $categoryId): object
     {
-        return $this->client->get("/search/categories/{$categoryId}");
+        return $this->client->get("/products/v4/search/categories/{$categoryId}");
     }
 
     /**
@@ -72,7 +69,7 @@ class DigikeyApiService
      */
     public function getDigiReelPricing(string $productNumber, int $requestedQuantity): object
     {
-        return $this->client->get("/search/{$productNumber}/digireelpricing", [
+        return $this->client->get("/products/v4/search/{$productNumber}/digireelpricing", [
             'requestedquantity' => $requestedQuantity,
         ]);
     }
@@ -83,7 +80,7 @@ class DigikeyApiService
      */
     public function getRecommendedProducts(string $productNumber): object
     {
-        return $this->client->get("/search/{$productNumber}/recommendedproducts");
+        return $this->client->get("/products/v4/search/{$productNumber}/recommendedproducts");
     }
 
     /**
@@ -92,7 +89,7 @@ class DigikeyApiService
      */
     public function getProductSubstitutions(string $productNumber): object
     {
-        return $this->client->get("/search/{$productNumber}/substitutions");
+        return $this->client->get("/products/v4/search/{$productNumber}/substitutions");
     }
 
     /**
@@ -101,7 +98,7 @@ class DigikeyApiService
      */
     public function getProductAssociations(string $productNumber): object
     {
-        return $this->client->get("/search/{$productNumber}/associations");
+        return $this->client->get("/products/v4/search/{$productNumber}/associations");
     }
 
     /**
@@ -110,7 +107,7 @@ class DigikeyApiService
      */
     public function getPackageTypeByQuantity(string $productNumber, int $requestedQuantity): object
     {
-        return $this->client->get("/search/packagetypebyquantity/{$productNumber}", [
+        return $this->client->get("/products/v4/search/packagetypebyquantity/{$productNumber}", [
             'requestedquantity' => $requestedQuantity,
         ]);
     }
@@ -121,7 +118,7 @@ class DigikeyApiService
      */
     public function getProductMedia(string $productNumber): array
     {
-        return $this->client->get("/search/{$productNumber}/media");
+        return $this->client->get("/products/v4/search/{$productNumber}/media");
     }
 
     /**
@@ -130,7 +127,7 @@ class DigikeyApiService
      */
     public function getProductPricing(string $productNumber, int $requestedQuantity): array
     {
-        return $this->client->get("/search/{$productNumber}/pricing", [
+        return $this->client->get("/products/v4/search/{$productNumber}/pricing", [
             'requestedquantity' => $requestedQuantity,
         ]);
     }
