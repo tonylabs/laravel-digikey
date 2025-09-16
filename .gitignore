@@ -29,6 +29,8 @@ Homestead.json
 .phpactor.json
 auth.json
 
+# PHPUnit cache
+/.phpunit.cache
+
 # macOS Finder
 .DS_Store
-/.phpunit.cache
