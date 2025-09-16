@@ -21,10 +21,8 @@ class DigikeyHttpClient
         $this->oauthService = $oauthService;
         $this->config = $config;
         
-        $baseUrl = $config['use_sandbox'] ? $config['sandbox_url'] : $config['base_url'];
-        
         $this->httpClient = new Client([
-            'base_uri' => $baseUrl,
+            'base_uri' => $config['api_url'],
             'timeout' => $config['http']['timeout'] ?? 30,
             'connect_timeout' => $config['http']['connect_timeout'] ?? 10,
             'headers' => [

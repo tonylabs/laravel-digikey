@@ -10,33 +10,37 @@
         "electronics",
         "components"
     ],
+    "homepage": "https://github.com/tonylabs/laravel-digikey",
     "license": "MIT",
     "authors": [
         {
             "name": "TONY WANG",
-            "email": "tony.wang@tonylabs.com"
+            "email": "tony.wang@tonylabs.com",
+            "role": "Developer"
         }
     ],
     "require": {
         "php": "^8.1",
         "illuminate/support": ">=9.0",
         "illuminate/http": ">=9.0",
-        "guzzlehttp/guzzle": "^7.0"
+        "guzzlehttp/guzzle": "^7.8",
+        "spatie/laravel-package-tools": "^1.92"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.0",
-        "orchestra/testbench": "^8.0|^9.0",
-        "mockery/mockery": "^1.6",
-        "fakerphp/faker": "^1.23"
+        "orchestra/testbench": "^9.0",
+        "pestphp/pest": "^2.20",
+        "pestphp/pest-plugin-arch": "^2.0",
+        "pestphp/pest-plugin-laravel": "^2.0"
     },
     "autoload": {
         "psr-4": {
             "TONYLABS\\Digikey\\": "src/"
         }
     },
-    "autoload-dev": {
-        "psr-4": {
-            "TONYLABS\\Digikey\\Tests\\": "tests/"
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
         }
     },
     "extra": {

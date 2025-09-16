@@ -29,8 +29,8 @@ Add your Digikey API credentials to your `.env` file:
 ```env
 DIGIKEY_CLIENT_ID=your_client_id
 DIGIKEY_CLIENT_SECRET=your_client_secret
-DIGIKEY_API_URL=https://api.digikey.com/products/v4
-DIGIKEY_OAUTH_REDIRECT_URI=https://your-app.com/auth/digikey/callback
+DIGIKEY_BASE_URL=https://api.digikey.com
+DIGIKEY_USE_SANDBOX=false
 DIGIKEY_CUSTOMER_ID=your_customer_id
 ```
 
@@ -60,15 +60,20 @@ $manufacturers = Digikey::getManufacturers();
 
 ### OAuth2 Authentication
 
+The package automatically handles OAuth2 authentication using client credentials flow. Tokens are automatically obtained and cached when needed.
+
 ```php
 use TONYLABS\Digikey\Services\DigikeyOAuthService;
 
-// Get authorization URL
+// Get access token (automatically cached)
 $oauth = app(DigikeyOAuthService::class);
-$authUrl = $oauth->getAuthorizationUrl('your-state-parameter');
+$accessToken = $oauth->getAccessToken();
 
-// Exchange code for token
-$tokenData = $oauth->getAccessToken($code);
+// Check if we have a valid cached token
+$hasValidToken = $oauth->hasValidToken();
+
+// Clear cached token if needed
+$oauth->clearCachedToken();
 ```
 
 ## API Methods

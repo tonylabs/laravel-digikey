@@ -22,55 +22,47 @@ class DigikeyOAuthService
     }
 
     /**
-     * Get the authorization URL for OAuth2 flow
+     * Get access token using client credentials flow
+     * This is the primary method for obtaining tokens
      */
-    public function getAuthorizationUrl(string $state = null): string
+    public function getAccessToken(): string
     {
-        $params = [
-            'response_type' => 'code',
-            'client_id' => $this->config['client_id'],
-            'redirect_uri' => $this->config['oauth']['redirect_uri'],
-        ];
-
-        if ($this->config['oauth']['scope']) {
-            $params['scope'] = $this->config['oauth']['scope'];
+        // Check if we have a valid cached token first
+        $cachedToken = Cache::get('token');
+        $tokenExpires = Cache::get('token_expires');
+        
+        if ($cachedToken && $tokenExpires && time() < $tokenExpires) {
+            return $cachedToken;
         }
 
-        if ($state) {
-            $params['state'] = $state;
-        }
-
-        return $this->config['oauth']['authorization_url'] . '?' . http_build_query($params);
-    }
-
-    /**
-     * Exchange authorization code for access token
-     */
-    public function getAccessToken(string $code): array
-    {
+        // Get a new token using client credentials flow
         try {
-            $response = $this->httpClient->post($this->config['oauth']['token_url'], [
+            $baseUri = $this->config['use_sandbox'] 
+                ? $this->config['sandbox_url'] 
+                : $this->config['base_url'];
+
+            $response = $this->httpClient->post($baseUri . '/v1/oauth2/token', [
                 'form_params' => [
-                    'grant_type' => 'authorization_code',
-                    'code' => $code,
-                    'redirect_uri' => $this->config['oauth']['redirect_uri'],
+                    'grant_type' => 'client_credentials',
                     'client_id' => $this->config['client_id'],
                     'client_secret' => $this->config['client_secret'],
-                ],
-                'headers' => [
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/x-www-form-urlencoded',
-                ],
+                ]
             ]);
 
-            $data = json_decode($response->getBody()->getContents(), true);
-
-            if (isset($data['access_token'])) {
-                $this->cacheToken($data);
-                return $data;
+            $body = json_decode($response->getBody()->getContents());
+            
+            if (!isset($body->access_token)) {
+                throw new DigikeyAuthenticationException('Invalid token response: access_token not found');
             }
 
-            throw new DigikeyAuthenticationException('Invalid token response: ' . json_encode($data));
+            $expiresIn = $body->expires_in; // Time in seconds
+            $expiryTime = time() + $expiresIn;
+            
+            // Cache the token and expiry time
+            Cache::put('token', $body->access_token, $expiresIn);
+            Cache::put('token_expires', $expiryTime, $expiresIn);
+            
+            return $body->access_token;
 
         } catch (GuzzleException $e) {
             throw new DigikeyAuthenticationException('Failed to obtain access token: ' . $e->getMessage(), 0, $e);
@@ -78,98 +70,12 @@ class DigikeyOAuthService
     }
 
     /**
-     * Get access token using client credentials flow (two-legged OAuth)
-     */
-    public function getClientCredentialsToken(): array
-    {
-        try {
-            $response = $this->httpClient->post($this->config['oauth']['token_url'], [
-                'form_params' => [
-                    'grant_type' => 'client_credentials',
-                    'client_id' => $this->config['client_id'],
-                    'client_secret' => $this->config['client_secret'],
-                ],
-                'headers' => [
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/x-www-form-urlencoded',
-                ],
-            ]);
-
-            $data = json_decode($response->getBody()->getContents(), true);
-
-            if (isset($data['access_token'])) {
-                $this->cacheToken($data);
-                return $data;
-            }
-
-            throw new DigikeyAuthenticationException('Invalid token response: ' . json_encode($data));
-
-        } catch (GuzzleException $e) {
-            throw new DigikeyAuthenticationException('Failed to obtain client credentials token: ' . $e->getMessage(), 0, $e);
-        }
-    }
-
-    /**
-     * Refresh access token using refresh token
-     */
-    public function refreshToken(string $refreshToken): array
-    {
-        try {
-            $response = $this->httpClient->post($this->config['oauth']['token_url'], [
-                'form_params' => [
-                    'grant_type' => 'refresh_token',
-                    'refresh_token' => $refreshToken,
-                    'client_id' => $this->config['client_id'],
-                    'client_secret' => $this->config['client_secret'],
-                ],
-                'headers' => [
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/x-www-form-urlencoded',
-                ],
-            ]);
-
-            $data = json_decode($response->getBody()->getContents(), true);
-
-            if (isset($data['access_token'])) {
-                $this->cacheToken($data);
-                return $data;
-            }
-
-            throw new DigikeyAuthenticationException('Invalid refresh token response: ' . json_encode($data));
-
-        } catch (GuzzleException $e) {
-            throw new DigikeyAuthenticationException('Failed to refresh token: ' . $e->getMessage(), 0, $e);
-        }
-    }
-
-    /**
      * Get cached access token or obtain a new one
+     * Alias for getAccessToken() for backward compatibility
      */
     public function getValidAccessToken(): string
     {
-        $cacheKey = $this->config['cache']['token_key'];
-        $cachedToken = Cache::get($cacheKey);
-
-        if ($cachedToken && isset($cachedToken['access_token'])) {
-            return $cachedToken['access_token'];
-        }
-
-        // Try to get a new token using client credentials
-        $tokenData = $this->getClientCredentialsToken();
-        return $tokenData['access_token'];
-    }
-
-    /**
-     * Cache the token data
-     */
-    protected function cacheToken(array $tokenData): void
-    {
-        $cacheKey = $this->config['cache']['token_key'];
-        $ttl = isset($tokenData['expires_in']) 
-            ? $tokenData['expires_in'] - 60 // Subtract 60 seconds for safety
-            : $this->config['cache']['token_ttl'];
-
-        Cache::put($cacheKey, $tokenData, $ttl);
+        return $this->getAccessToken();
     }
 
     /**
@@ -177,7 +83,8 @@ class DigikeyOAuthService
      */
     public function clearCachedToken(): void
     {
-        Cache::forget($this->config['cache']['token_key']);
+        Cache::forget('token');
+        Cache::forget('token_expires');
     }
 
     /**
@@ -185,9 +92,9 @@ class DigikeyOAuthService
      */
     public function hasValidToken(): bool
     {
-        $cacheKey = $this->config['cache']['token_key'];
-        $cachedToken = Cache::get($cacheKey);
+        $cachedToken = Cache::get('token');
+        $tokenExpires = Cache::get('token_expires');
 
-        return $cachedToken && isset($cachedToken['access_token']);
+        return $cachedToken && $tokenExpires && time() < $tokenExpires;
     }
 }
