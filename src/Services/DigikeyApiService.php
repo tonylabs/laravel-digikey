@@ -4,75 +4,75 @@ namespace TONYLABS\Digikey\Services;
 
 class DigikeyApiService
 {
-    protected DigikeyHttpClient $httpClient;
+    protected DigikeyHttpClient $client;
 
-    public function __construct(DigikeyHttpClient $httpClient)
+    public function __construct(DigikeyHttpClient $client)
     {
-        $this->httpClient = $httpClient;
+        $this->client = $client;
     }
 
     /**
      * Search for products using keywords
      * POST /search/keyword
      */
-    public function searchKeyword(array $searchRequest): array
+    public function searchKeyword(array $searchRequest): object
     {
-        return $this->httpClient->post('search/keyword', $searchRequest);
+        return $this->client->post('/search/keyword', $searchRequest);
     }
 
     /**
      * Get product details by product number
      * GET /search/{productNumber}/productdetails
      */
-    public function getProductDetails(string $productNumber, array $includes = [], array $excludes = []): array
+    public function getProductDetails(string $productNumber, array $includes = [], array $excludes = []): object
     {
         $query = [];
-        
+
         if (!empty($includes)) {
             $query['includes'] = implode(',', $includes);
         }
-        
+
         if (!empty($excludes)) {
             $query['excludes'] = implode(',', $excludes);
         }
 
-        return $this->httpClient->get("search/{$productNumber}/productdetails", $query);
+        return $this->client->get("/search/{$productNumber}/productdetails", $query);
     }
 
     /**
      * Get list of manufacturers
      * GET /search/manufacturers
      */
-    public function getManufacturers(): array
+    public function getManufacturers(): object
     {
-        return $this->httpClient->get('search/manufacturers');
+        return $this->client->get('/search/manufacturers');
     }
 
     /**
      * Get list of categories
      * GET /search/categories
      */
-    public function getCategories(): array
+    public function getCategories(): object
     {
-        return $this->httpClient->get('search/categories');
+        return $this->client->get('/search/categories');
     }
 
     /**
      * Get category details by category ID
      * GET /search/categories/{categoryId}
      */
-    public function getCategoryDetails(int $categoryId): array
+    public function getCategoryDetails(int $categoryId): object
     {
-        return $this->httpClient->get("search/categories/{$categoryId}");
+        return $this->client->get("/search/categories/{$categoryId}");
     }
 
     /**
      * Get DigiReel pricing for a product
      * GET /search/{productNumber}/digireelpricing
      */
-    public function getDigiReelPricing(string $productNumber, int $requestedQuantity): array
+    public function getDigiReelPricing(string $productNumber, int $requestedQuantity): object
     {
-        return $this->httpClient->get("search/{$productNumber}/digireelpricing", [
+        return $this->client->get("/search/{$productNumber}/digireelpricing", [
             'requestedquantity' => $requestedQuantity,
         ]);
     }
@@ -81,36 +81,36 @@ class DigikeyApiService
      * Get recommended products for a product
      * GET /search/{productNumber}/recommendedproducts
      */
-    public function getRecommendedProducts(string $productNumber): array
+    public function getRecommendedProducts(string $productNumber): object
     {
-        return $this->httpClient->get("search/{$productNumber}/recommendedproducts");
+        return $this->client->get("/search/{$productNumber}/recommendedproducts");
     }
 
     /**
      * Get product substitutions
      * GET /search/{productNumber}/substitutions
      */
-    public function getProductSubstitutions(string $productNumber): array
+    public function getProductSubstitutions(string $productNumber): object
     {
-        return $this->httpClient->get("search/{$productNumber}/substitutions");
+        return $this->client->get("/search/{$productNumber}/substitutions");
     }
 
     /**
      * Get product associations
      * GET /search/{productNumber}/associations
      */
-    public function getProductAssociations(string $productNumber): array
+    public function getProductAssociations(string $productNumber): object
     {
-        return $this->httpClient->get("search/{$productNumber}/associations");
+        return $this->client->get("/search/{$productNumber}/associations");
     }
 
     /**
      * Get package type by quantity (deprecated)
      * GET /search/packagetypebyquantity/{productNumber}
      */
-    public function getPackageTypeByQuantity(string $productNumber, int $requestedQuantity): array
+    public function getPackageTypeByQuantity(string $productNumber, int $requestedQuantity): object
     {
-        return $this->httpClient->get("search/packagetypebyquantity/{$productNumber}", [
+        return $this->client->get("/search/packagetypebyquantity/{$productNumber}", [
             'requestedquantity' => $requestedQuantity,
         ]);
     }
@@ -121,7 +121,7 @@ class DigikeyApiService
      */
     public function getProductMedia(string $productNumber): array
     {
-        return $this->httpClient->get("search/{$productNumber}/media");
+        return $this->client->get("/search/{$productNumber}/media");
     }
 
     /**
@@ -130,7 +130,7 @@ class DigikeyApiService
      */
     public function getProductPricing(string $productNumber, int $requestedQuantity): array
     {
-        return $this->httpClient->get("search/{$productNumber}/pricing", [
+        return $this->client->get("/search/{$productNumber}/pricing", [
             'requestedquantity' => $requestedQuantity,
         ]);
     }
@@ -140,7 +140,7 @@ class DigikeyApiService
      */
     public function getHttpClient(): DigikeyHttpClient
     {
-        return $this->httpClient;
+        return $this->client;
     }
 
     /**
@@ -148,6 +148,6 @@ class DigikeyApiService
      */
     public function getOAuthService(): DigikeyOAuthService
     {
-        return $this->httpClient->getOAuthService();
+        return $this->client->getOAuthService();
     }
 }

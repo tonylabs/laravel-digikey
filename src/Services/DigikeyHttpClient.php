@@ -12,17 +12,17 @@ use Psr\Http\Message\ResponseInterface;
 
 class DigikeyHttpClient
 {
-    protected Client $httpClient;
+    protected Client $client;
     protected DigikeyOAuthService $oauthService;
     protected array $config;
 
     public function __construct(DigikeyOAuthService $oauthService, array $config)
     {
-        $this->oauthService = $oauthService;
         $this->config = $config;
-        
-        $this->httpClient = new Client([
-            'base_uri' => $config['api_url'],
+        $this->oauthService = $oauthService;
+        $uri = $config['use_sandbox'] ? $config['sandbox_url'] : $config['base_url'];
+        $this->client = new Client([
+            'base_uri' => $uri,
             'timeout' => $config['http']['timeout'] ?? 30,
             'connect_timeout' => $config['http']['connect_timeout'] ?? 10,
             'headers' => [
@@ -39,53 +39,53 @@ class DigikeyHttpClient
     /**
      * Make a GET request
      */
-    public function get(string $endpoint, array $query = [], array $headers = []): array
+    public function get(string $endpoint, array $query = [], array $headers = []): object
     {
         return $this->makeRequest('GET', $endpoint, [
             'query' => $query,
-            'headers' => $this->prepareHeaders($headers),
+            'headers' => $this->headers($headers),
         ]);
     }
 
     /**
      * Make a POST request
      */
-    public function post(string $endpoint, array $data = [], array $headers = []): array
+    public function post(string $endpoint, array $data = [], array $headers = []): object
     {
         return $this->makeRequest('POST', $endpoint, [
             'json' => $data,
-            'headers' => $this->prepareHeaders($headers),
+            'headers' => $this->headers($headers),
         ]);
     }
 
     /**
      * Make a PUT request
      */
-    public function put(string $endpoint, array $data = [], array $headers = []): array
+    public function put(string $endpoint, array $data = [], array $headers = []): object
     {
         return $this->makeRequest('PUT', $endpoint, [
             'json' => $data,
-            'headers' => $this->prepareHeaders($headers),
+            'headers' => $this->headers($headers),
         ]);
     }
 
     /**
      * Make a DELETE request
      */
-    public function delete(string $endpoint, array $headers = []): array
+    public function delete(string $endpoint, array $headers = []): object
     {
         return $this->makeRequest('DELETE', $endpoint, [
-            'headers' => $this->prepareHeaders($headers),
+            'headers' => $this->headers($headers),
         ]);
     }
 
     /**
      * Make an HTTP request
      */
-    protected function makeRequest(string $method, string $endpoint, array $options = []): array
+    protected function makeRequest(string $method, string $endpoint, array $options = []): object
     {
         try {
-            $response = $this->httpClient->request($method, $endpoint, $options);
+            $response = $this->client->request($method, $endpoint, $options);
             return $this->handleResponse($response);
         } catch (ClientException $e) {
             $this->handleClientException($e);
@@ -99,39 +99,57 @@ class DigikeyHttpClient
     /**
      * Prepare headers with authentication
      */
-    protected function prepareHeaders(array $additionalHeaders = []): array
+    protected function headers(array $headers = []): array
     {
-        $headers = $additionalHeaders;
-
-        // Add authorization header
         try {
             $accessToken = $this->oauthService->getValidAccessToken();
             $headers['Authorization'] = 'Bearer ' . $accessToken;
         } catch (\Exception $e) {
             throw new DigikeyAuthenticationException('Failed to obtain access token: ' . $e->getMessage(), 0, $e);
         }
-
-        // Add customer ID if configured
         if (!empty($this->config['customer_id'])) {
             $headers['X-DIGIKEY-Customer-Id'] = $this->config['customer_id'];
         }
-
         return $headers;
     }
 
     /**
      * Handle successful response
      */
-    protected function handleResponse(ResponseInterface $response): array
+    protected function handleResponse(ResponseInterface $response): object
     {
         $content = $response->getBody()->getContents();
-        $data = json_decode($content, true);
-
+        $data = json_decode($content, false); // false = return objects instead of arrays
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new DigikeyApiException('Invalid JSON response: ' . json_last_error_msg());
         }
+        $responseData = $data ?? new \stdClass();
+        $rateLimitHeaders = $this->extractRateLimitHeaders($response);
+        if (!empty($rateLimitHeaders)) {
+            $responseData->_rate_limit = (object) $rateLimitHeaders;
+        }
+        return $responseData;
+    }
 
-        return $data ?? [];
+    /**
+     * Extract rate limit headers from response
+     */
+    protected function extractRateLimitHeaders(ResponseInterface $response): array
+    {
+        $rateLimitData = [];
+        if ($response->hasHeader('X-RateLimit-Limit')) {
+            $rateLimitData['limit'] = (int) $response->getHeaderLine('X-RateLimit-Limit');
+        }
+        if ($response->hasHeader('X-RateLimit-Remaining')) {
+            $rateLimitData['remaining'] = (int) $response->getHeaderLine('X-RateLimit-Remaining');
+        }
+        if ($response->hasHeader('X-RateLimit-Reset')) {
+            $rateLimitData['reset'] = (int) $response->getHeaderLine('X-RateLimit-Reset');
+        }
+        if ($response->hasHeader('X-RateLimit-Window')) {
+            $rateLimitData['window'] = $response->getHeaderLine('X-RateLimit-Window');
+        }
+        return $rateLimitData;
     }
 
     /**
@@ -142,16 +160,12 @@ class DigikeyHttpClient
         $response = $e->getResponse();
         $statusCode = $response->getStatusCode();
         $content = $response->getBody()->getContents();
-        
         $errorData = json_decode($content, true) ?? [];
         $message = $errorData['message'] ?? $errorData['error_description'] ?? 'Client error occurred';
-
         if ($statusCode === 401) {
-            // Clear cached token on authentication error
             $this->oauthService->clearCachedToken();
             throw new DigikeyAuthenticationException($message, $statusCode, $errorData, $e);
         }
-
         throw new DigikeyApiException($message, $statusCode, $errorData, $e);
     }
 
@@ -163,10 +177,8 @@ class DigikeyHttpClient
         $response = $e->getResponse();
         $statusCode = $response->getStatusCode();
         $content = $response->getBody()->getContents();
-        
         $errorData = json_decode($content, true) ?? [];
         $message = $errorData['message'] ?? 'Server error occurred';
-
         throw new DigikeyApiException($message, $statusCode, $errorData, $e);
     }
 
@@ -175,7 +187,7 @@ class DigikeyHttpClient
      */
     public function getHttpClient(): Client
     {
-        return $this->httpClient;
+        return $this->client;
     }
 
     /**

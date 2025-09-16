@@ -9,13 +9,13 @@ use TONYLABS\Digikey\Exceptions\DigikeyAuthenticationException;
 
 class DigikeyOAuthService
 {
-    protected Client $httpClient;
+    protected Client $client;
     protected array $config;
 
     public function __construct(array $config)
     {
         $this->config = $config;
-        $this->httpClient = new Client([
+        $this->client = new Client([
             'timeout' => $config['http']['timeout'] ?? 30,
             'connect_timeout' => $config['http']['connect_timeout'] ?? 10,
         ]);
@@ -27,41 +27,27 @@ class DigikeyOAuthService
      */
     public function getAccessToken(): string
     {
-        // Check if we have a valid cached token first
         $cachedToken = Cache::get('token');
         $tokenExpires = Cache::get('token_expires');
-        
         if ($cachedToken && $tokenExpires && time() < $tokenExpires) {
             return $cachedToken;
         }
-
-        // Get a new token using client credentials flow
         try {
-            $baseUri = $this->config['use_sandbox'] 
-                ? $this->config['sandbox_url'] 
-                : $this->config['base_url'];
-
-            $response = $this->httpClient->post($baseUri . '/v1/oauth2/token', [
+            $response = $this->client->post($this->config['oauth']['token_url'], [
                 'form_params' => [
                     'grant_type' => 'client_credentials',
                     'client_id' => $this->config['client_id'],
                     'client_secret' => $this->config['client_secret'],
                 ]
             ]);
-
             $body = json_decode($response->getBody()->getContents());
-            
             if (!isset($body->access_token)) {
                 throw new DigikeyAuthenticationException('Invalid token response: access_token not found');
             }
-
             $expiresIn = $body->expires_in; // Time in seconds
             $expiryTime = time() + $expiresIn;
-            
-            // Cache the token and expiry time
             Cache::put('token', $body->access_token, $expiresIn);
             Cache::put('token_expires', $expiryTime, $expiresIn);
-            
             return $body->access_token;
 
         } catch (GuzzleException $e) {
@@ -94,7 +80,6 @@ class DigikeyOAuthService
     {
         $cachedToken = Cache::get('token');
         $tokenExpires = Cache::get('token_expires');
-
         return $cachedToken && $tokenExpires && time() < $tokenExpires;
     }
 }

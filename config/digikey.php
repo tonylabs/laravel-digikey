@@ -30,8 +30,8 @@ return [
     | Base URLs for Digikey API endpoints
     |
     */
-    'base_url' => env('DIGIKEY_BASE_URL', 'https://api.digikey.com'),
-    'sandbox_url' => env('DIGIKEY_SANDBOX_URL', 'https://sandbox-api.digikey.com'),
+    'base_url' => env('DIGIKEY_BASE_URL', 'https://api.digikey.com/products/v4'),
+    'sandbox_url' => env('DIGIKEY_SANDBOX_URL', 'https://sandbox-api.digikey.com/products/v4'),
     'use_sandbox' => env('DIGIKEY_USE_SANDBOX', false),
 
     /*
