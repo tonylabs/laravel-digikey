@@ -34,6 +34,85 @@ class KeywordSearchRequest
     }
 
     /**
+     * Set category filter by category ID
+     */
+    public function setCategoryFilter(string $categoryId): self
+    {
+        if (!isset($this->filters['FilterOptionsRequest'])) {
+            $this->filters['FilterOptionsRequest'] = [];
+        }
+        
+        $this->filters['FilterOptionsRequest']['CategoryFilter'] = [
+            ['Id' => $categoryId]
+        ];
+        
+        return $this;
+    }
+
+    /**
+     * Add multiple category filters
+     */
+    public function setCategoryFilters(array $categoryIds): self
+    {
+        if (!isset($this->filters['FilterOptionsRequest'])) {
+            $this->filters['FilterOptionsRequest'] = [];
+        }
+        
+        $categoryFilters = [];
+        foreach ($categoryIds as $categoryId) {
+            $categoryFilters[] = ['Id' => (string)$categoryId];
+        }
+        
+        $this->filters['FilterOptionsRequest']['CategoryFilter'] = $categoryFilters;
+        
+        return $this;
+    }
+
+    /**
+     * Set manufacturer filter by manufacturer ID
+     */
+    public function setManufacturerFilter(string $manufacturerId): self
+    {
+        if (!isset($this->filters['FilterOptionsRequest'])) {
+            $this->filters['FilterOptionsRequest'] = [];
+        }
+        
+        $this->filters['FilterOptionsRequest']['ManufacturerFilter'] = [
+            ['Id' => $manufacturerId]
+        ];
+        
+        return $this;
+    }
+
+    /**
+     * Set search options (e.g., InStock, RohsCompliant, etc.)
+     */
+    public function setSearchOptions(array $options): self
+    {
+        if (!isset($this->filters['FilterOptionsRequest'])) {
+            $this->filters['FilterOptionsRequest'] = [];
+        }
+        
+        $this->filters['FilterOptionsRequest']['SearchOptions'] = $options;
+        
+        return $this;
+    }
+
+    /**
+     * Set minimum quantity available filter
+     */
+    public function setMinimumQuantityAvailable(int $quantity): self
+    {
+        if (!isset($this->filters['FilterOptionsRequest'])) {
+            $this->filters['FilterOptionsRequest'] = [];
+        }
+        
+        $this->filters['FilterOptionsRequest']['MinimumQuantityAvailable'] = $quantity;
+        
+        return $this;
+    }
+
+    /**
      * Set the OAuth service for token validation
      */
     public function setOAuthService(DigikeyOAuthService $oauthService): self
@@ -83,24 +162,45 @@ class KeywordSearchRequest
 
     public function toArray(): array
     {
-        return [
+        $request = [
             'Keywords' => $this->keywords,
-            'RecordCount' => $this->recordCount,
-            'RecordStartPosition' => $this->recordStartPosition,
-            'Filters' => $this->filters,
-            'Sort' => $this->sort,
-            'RequestedQuantity' => $this->requestedQuantity,
+            'Limit' => $this->recordCount,
+            'Offset' => $this->recordStartPosition,
         ];
+
+        // Add FilterOptionsRequest if filters are set
+        if (!empty($this->filters['FilterOptionsRequest'])) {
+            $request['FilterOptionsRequest'] = $this->filters['FilterOptionsRequest'];
+        }
+
+        // Add SortOptions if sort is specified
+        if ($this->sort !== 'PartNumber') {
+            $request['SortOptions'] = [
+                'SortBy' => $this->sort
+            ];
+        }
+
+        return $request;
     }
 
     public static function fromArray(array $data, ?DigikeyOAuthService $oauthService = null): self
     {
+        $filters = [];
+        if (isset($data['FilterOptionsRequest'])) {
+            $filters['FilterOptionsRequest'] = $data['FilterOptionsRequest'];
+        }
+
+        $sort = 'PartNumber';
+        if (isset($data['SortOptions']['SortBy'])) {
+            $sort = $data['SortOptions']['SortBy'];
+        }
+
         return new self(
             $data['Keywords'] ?? '',
-            $data['RecordCount'] ?? 25,
-            $data['RecordStartPosition'] ?? 0,
-            $data['Filters'] ?? [],
-            $data['Sort'] ?? 'PartNumber',
+            $data['Limit'] ?? $data['RecordCount'] ?? 25,
+            $data['Offset'] ?? $data['RecordStartPosition'] ?? 0,
+            $filters,
+            $sort,
             $data['RequestedQuantity'] ?? '1',
             $oauthService
         );
