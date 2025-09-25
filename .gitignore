@@ -32,5 +32,8 @@ auth.json
 # PHPUnit cache
 /.phpunit.cache
 
+# Jetbrains
+/.idea
+
 # macOS Finder
 .DS_Store
