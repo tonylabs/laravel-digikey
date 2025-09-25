@@ -12,9 +12,9 @@ use Psr\Http\Message\ResponseInterface;
 
 class DigikeyHttpClient
 {
+    protected array $config;
     protected Client $client;
     protected DigikeyOAuthService $oauthService;
-    protected array $config;
 
     public function __construct(DigikeyOAuthService $oauthService, array $config)
     {
