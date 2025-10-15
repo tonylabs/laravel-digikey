@@ -46,7 +46,7 @@ return [
         'authorization_url' => 'https://api.digikey.com/v1/oauth2/authorize',
         'token_url' => 'https://api.digikey.com/v1/oauth2/token',
         'redirect_uri' => env('DIGIKEY_REDIRECT_URI'),
-        'scope' => env('DIGIKEY_SCOPE', ''),
+        'scope' => env('DIGIKEY_SCOPE', 'productinformation'),
     ],
 
     /*
