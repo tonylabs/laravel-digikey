@@ -15,7 +15,6 @@ class DigikeyHttpClient
     protected array $config;
     protected Client $client;
     protected DigikeyOAuthService $oauthService;
-
     public function __construct(DigikeyOAuthService $oauthService, array $config)
     {
         $this->config = $config;
