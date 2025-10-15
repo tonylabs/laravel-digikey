@@ -2,15 +2,12 @@
 
 namespace TONYLABS\Digikey\Services;
 
-class DigikeyApiService
-{
+class DigikeyApiService {
     protected DigikeyHttpClient $client;
-
     public function __construct(DigikeyHttpClient $client)
     {
         $this->client = $client;
     }
-
     /**
      * Search for products using keywords
      * POST /search/keyword
@@ -19,7 +16,6 @@ class DigikeyApiService
     {
         return $this->client->post('/products/v4/search/keyword', $searchRequest);
     }
-
     /**
      * Get product details by product number
      * GET /search/{productNumber}/productdetails
@@ -146,5 +142,64 @@ class DigikeyApiService
     public function getOAuthService(): DigikeyOAuthService
     {
         return $this->client->getOAuthService();
+    }
+
+    /**
+     * Create a Digikey API service instance with explicit credentials.
+     */
+    public static function createWithCredentials(string $clientId, string $clientSecret, array $configOverrides = []): self
+    {
+        $config = static::resolveConfiguration($configOverrides);
+        $config['client_id'] = $clientId;
+        $config['client_secret'] = $clientSecret;
+
+        $oauthService = new DigikeyOAuthService($config);
+        $httpClient = new DigikeyHttpClient($oauthService, $config);
+
+        return new self($httpClient);
+    }
+
+    /**
+     * Merge the default package configuration with any runtime overrides.
+     */
+    protected static function resolveConfiguration(array $configOverrides = []): array
+    {
+        $defaults = [
+            'client_id' => null,
+            'client_secret' => null,
+            'base_url' => 'https://api.digikey.com',
+            'sandbox_url' => 'https://sandbox-api.digikey.com',
+            'use_sandbox' => false,
+            'oauth' => [
+                'authorization_url' => 'https://api.digikey.com/v1/oauth2/authorize',
+                'token_url' => 'https://api.digikey.com/v1/oauth2/token',
+                'redirect_uri' => null,
+                'scope' => '',
+            ],
+            'locale' => [
+                'language' => 'en',
+                'currency' => 'USD',
+                'site' => 'US',
+            ],
+            'customer_id' => null,
+            'cache' => [
+                'token_key' => 'digikey_access_token',
+                'token_ttl' => 3600,
+            ],
+            'http' => [
+                'timeout' => 30,
+                'connect_timeout' => 10,
+                'retry_attempts' => 3,
+            ],
+        ];
+
+        if (function_exists('config')) {
+            $runtimeConfig = config('digikey', []);
+            if (is_array($runtimeConfig) && !empty($runtimeConfig)) {
+                $defaults = array_replace_recursive($defaults, $runtimeConfig);
+            }
+        }
+
+        return array_replace_recursive($defaults, $configOverrides);
     }
 }

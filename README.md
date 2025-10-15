@@ -58,6 +58,29 @@ $productDetails = Digikey::getProductDetails('296-1173-1-ND');
 $manufacturers = Digikey::getManufacturers();
 ```
 
+### Instantiate with Explicit Credentials
+
+If you prefer not to rely on the published configuration, you can build a
+standalone client by supplying the API credentials directly:
+
+```php
+use TONYLABS\Digikey\Services\DigikeyApiService;
+
+$digikey = DigikeyApiService::createWithCredentials(
+    clientId: 'your_client_id',
+    clientSecret: 'your_client_secret',
+);
+
+$results = $digikey->searchKeyword([
+    'Keywords' => 'resistor',
+    'RecordCount' => 10,
+]);
+```
+
+Optional configuration overrides (such as toggling the sandbox URL or
+adjusting locale settings) can be passed as the third argument to
+`createWithCredentials`.
+
 ### OAuth2 Authentication
 
 The package automatically handles OAuth2 authentication using client credentials flow. Tokens are automatically obtained and cached when needed.

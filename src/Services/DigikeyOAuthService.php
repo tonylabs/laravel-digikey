@@ -11,6 +11,8 @@ class DigikeyOAuthService
 {
     protected Client $client;
     protected array $config;
+    protected string $tokenCacheKey;
+    protected string $tokenExpiryCacheKey;
 
     public function __construct(array $config)
     {
@@ -19,6 +21,8 @@ class DigikeyOAuthService
             'timeout' => $config['http']['timeout'] ?? 30,
             'connect_timeout' => $config['http']['connect_timeout'] ?? 10,
         ]);
+        $this->tokenCacheKey = $this->buildCacheKey($config['cache']['token_key'] ?? 'digikey_access_token');
+        $this->tokenExpiryCacheKey = $this->tokenCacheKey . '_expires';
     }
 
     /**
@@ -27,8 +31,8 @@ class DigikeyOAuthService
      */
     public function getAccessToken(): string
     {
-        $cachedToken = Cache::get('token');
-        $tokenExpires = Cache::get('token_expires');
+        $cachedToken = Cache::get($this->tokenCacheKey);
+        $tokenExpires = Cache::get($this->tokenExpiryCacheKey);
         if ($cachedToken && $tokenExpires && time() < $tokenExpires) {
             return $cachedToken;
         }
@@ -44,10 +48,13 @@ class DigikeyOAuthService
             if (!isset($body->access_token)) {
                 throw new DigikeyAuthenticationException('Invalid token response: access_token not found');
             }
-            $expiresIn = $body->expires_in; // Time in seconds
+            $expiresIn = isset($body->expires_in) ? (int) $body->expires_in : 0;
+            if ($expiresIn <= 0) {
+                $expiresIn = $this->config['cache']['token_ttl'] ?? 3600;
+            }
             $expiryTime = time() + $expiresIn;
-            Cache::put('token', $body->access_token, $expiresIn);
-            Cache::put('token_expires', $expiryTime, $expiresIn);
+            Cache::put($this->tokenCacheKey, $body->access_token, $expiresIn);
+            Cache::put($this->tokenExpiryCacheKey, $expiryTime, $expiresIn);
             return $body->access_token;
 
         } catch (GuzzleException $e) {
@@ -69,8 +76,8 @@ class DigikeyOAuthService
      */
     public function clearCachedToken(): void
     {
-        Cache::forget('token');
-        Cache::forget('token_expires');
+        Cache::forget($this->tokenCacheKey);
+        Cache::forget($this->tokenExpiryCacheKey);
     }
 
     /**
@@ -78,8 +85,21 @@ class DigikeyOAuthService
      */
     public function hasValidToken(): bool
     {
-        $cachedToken = Cache::get('token');
-        $tokenExpires = Cache::get('token_expires');
+        $cachedToken = Cache::get($this->tokenCacheKey);
+        $tokenExpires = Cache::get($this->tokenExpiryCacheKey);
         return $cachedToken && $tokenExpires && time() < $tokenExpires;
+    }
+
+    /**
+     * Build a cache key that is namespaced per client.
+     */
+    protected function buildCacheKey(string $baseKey): string
+    {
+        $clientId = $this->config['client_id'] ?? null;
+        if (!$clientId) {
+            return $baseKey;
+        }
+
+        return $baseKey . ':' . sha1($clientId);
     }
 }
