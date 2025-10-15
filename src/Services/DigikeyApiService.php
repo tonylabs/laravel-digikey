@@ -147,16 +147,14 @@ class DigikeyApiService {
     /**
      * Create a Digikey API service instance with explicit credentials.
      */
-    public static function createWithCredentials(string $clientId, string $clientSecret, array $configOverrides = []): self
+    public static function createWithCredentials(string $client_id, string $client_secret, array $configOverrides = []): self
     {
         $config = static::resolveConfiguration($configOverrides);
-        $config['client_id'] = $clientId;
-        $config['client_secret'] = $clientSecret;
-
-        $oauthService = new DigikeyOAuthService($config);
-        $httpClient = new DigikeyHttpClient($oauthService, $config);
-
-        return new self($httpClient);
+        $config['client_id'] = $client_id;
+        $config['client_secret'] = $client_secret;
+        $objOAuthService = new DigikeyOAuthService($config);
+        $objClient = new DigikeyHttpClient($objOAuthService, $config);
+        return new self($objClient);
     }
 
     /**
