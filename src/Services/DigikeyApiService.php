@@ -153,6 +153,7 @@ class DigikeyApiService {
         $config['client_id'] = $client_id;
         $config['client_secret'] = $client_secret;
         $objOAuthService = new DigikeyOAuthService($config);
+        DigikeyOAuthServiceRegistry::setDefault($objOAuthService);
         $objClient = new DigikeyHttpClient($objOAuthService, $config);
         return new self($objClient);
     }

@@ -37,12 +37,19 @@ class DigikeyOAuthService
             return $cachedToken;
         }
         try {
+            $formParams = [
+                'grant_type' => 'client_credentials',
+                'client_id' => $this->config['client_id'],
+                'client_secret' => $this->config['client_secret'],
+            ];
+
+            $scope = $this->resolveScope();
+            if ($scope !== null) {
+                $formParams['scope'] = $scope;
+            }
+
             $response = $this->client->post($this->config['oauth']['token_url'], [
-                'form_params' => [
-                    'grant_type' => 'client_credentials',
-                    'client_id' => $this->config['client_id'],
-                    'client_secret' => $this->config['client_secret'],
-                ]
+                'form_params' => $formParams,
             ]);
             $body = json_decode($response->getBody()->getContents());
             if (!isset($body->access_token)) {
@@ -101,5 +108,32 @@ class DigikeyOAuthService
         }
 
         return $baseKey . ':' . sha1($clientId);
+    }
+
+    /**
+     * Normalise configured scopes to a space-delimited string per OAuth2 spec.
+     */
+    protected function resolveScope(): ?string
+    {
+        if (!isset($this->config['oauth']['scope'])) {
+            return null;
+        }
+
+        $scope = $this->config['oauth']['scope'];
+
+        if (is_string($scope)) {
+            $scope = trim($scope);
+            return $scope === '' ? null : $scope;
+        }
+
+        if (is_array($scope)) {
+            $normalised = array_filter(array_map(static function ($value) {
+                return is_string($value) ? trim($value) : '';
+            }, $scope));
+
+            return empty($normalised) ? null : implode(' ', $normalised);
+        }
+
+        return null;
     }
 }

@@ -3,6 +3,7 @@
 namespace TONYLABS\Digikey\Product;
 
 use TONYLABS\Digikey\Services\DigikeyOAuthService;
+use TONYLABS\Digikey\Services\DigikeyOAuthServiceRegistry;
 use TONYLABS\Digikey\Exceptions\DigikeyAuthenticationException;
 
 class KeywordSearchRequest
@@ -129,8 +130,20 @@ class KeywordSearchRequest
     public function validateToken(): bool
     {
         if ($this->oauthService === null) {
-            // If no OAuth service is injected, try to resolve it from the container
-            $this->oauthService = app(DigikeyOAuthService::class);
+            $this->oauthService = DigikeyOAuthServiceRegistry::getDefault();
+        }
+
+        if ($this->oauthService === null && function_exists('app')) {
+            try {
+                // Fall back to resolving via the container when available
+                $this->oauthService = app(DigikeyOAuthService::class);
+            } catch (\Throwable $exception) {
+                // Leave oauthService null so we surface a clear authentication error below.
+            }
+        }
+
+        if ($this->oauthService === null) {
+            throw new DigikeyAuthenticationException('Unable to resolve DigikeyOAuthService instance for token validation.');
         }
 
         if (!$this->oauthService->hasValidToken()) {

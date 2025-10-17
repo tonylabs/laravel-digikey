@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use TONYLABS\Digikey\Services\DigikeyApiService;
 use TONYLABS\Digikey\Services\DigikeyHttpClient;
 use TONYLABS\Digikey\Services\DigikeyOAuthService;
+use TONYLABS\Digikey\Services\DigikeyOAuthServiceRegistry;
 
 class DigikeyServiceProvider extends ServiceProvider
 {
@@ -19,9 +20,12 @@ class DigikeyServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(DigikeyOAuthService::class, function ($app) {
-            return new DigikeyOAuthService(
+            $service = new DigikeyOAuthService(
                 $app['config']['digikey']
             );
+            DigikeyOAuthServiceRegistry::setDefault($service);
+
+            return $service;
         });
 
         $this->app->singleton(DigikeyHttpClient::class, function ($app) {

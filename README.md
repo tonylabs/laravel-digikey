@@ -32,6 +32,7 @@ DIGIKEY_CLIENT_SECRET=your_client_secret
 DIGIKEY_BASE_URL=https://api.digikey.com
 DIGIKEY_USE_SANDBOX=false
 DIGIKEY_CUSTOMER_ID=your_customer_id
+DIGIKEY_SCOPE=productinformation
 ```
 
 ## Usage
@@ -71,6 +72,15 @@ $digikey = DigikeyApiService::createWithCredentials(
     clientSecret: 'your_client_secret',
 );
 
+$request = KeywordSearchRequest::fromArray([
+    'Keywords' => 'resistor',
+    'RecordCount' => 10,
+]);
+
+$results = $digikey->searchKeyword(
+    $request->toArrayWithValidation()
+);
+
 $results = $digikey->searchKeyword([
     'Keywords' => 'resistor',
     'RecordCount' => 10,
@@ -79,6 +89,11 @@ $results = $digikey->searchKeyword([
 
 Optional configuration overrides (such as toggling the sandbox URL or
 adjusting locale settings) can be passed as the third argument to
+`createWithCredentials`.
+
+When you instantiate the client with explicit credentials, any
+`KeywordSearchRequest` objects you build without manually wiring an
+OAuth service will automatically reuse the credentials supplied to
 `createWithCredentials`.
 
 ### OAuth2 Authentication

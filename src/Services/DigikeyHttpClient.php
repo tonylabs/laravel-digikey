@@ -87,6 +87,10 @@ class DigikeyHttpClient
             $response = $this->client->request($method, $endpoint, $options);
             return $this->handleResponse($response);
         } catch (ClientException $e) {
+            $response = $e->getResponse();
+            if ($response !== null && $response->getStatusCode() === 429) {
+                throw $e;
+            }
             $this->handleClientException($e);
         } catch (ServerException $e) {
             $this->handleServerException($e);
