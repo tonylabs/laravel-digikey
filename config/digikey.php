@@ -3,10 +3,10 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | Digikey API Configuration
+    | DigiKey API Configuration
     |--------------------------------------------------------------------------
     |
-    | Configuration for Digikey Product Information API V4
+    | Configuration for DigiKey Product Information API V4
     |
     */
 
@@ -15,7 +15,7 @@ return [
     | API Credentials
     |--------------------------------------------------------------------------
     |
-    | Your Digikey API credentials. You can obtain these from the Digikey
+    | Your DigiKey API credentials. You can obtain these from the DigiKey
     | Developer Portal at https://developer.digikey.com/
     |
     */
@@ -27,7 +27,7 @@ return [
     | API URLs
     |--------------------------------------------------------------------------
     |
-    | Base URLs for Digikey API endpoints
+    | Base URLs for DigiKey API endpoints
     |
     */
     'base_url' => env('DIGIKEY_BASE_URL', 'https://api.digikey.com'),

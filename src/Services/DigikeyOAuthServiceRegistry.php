@@ -1,17 +1,17 @@
 <?php
 
-namespace TONYLABS\Digikey\Services;
+namespace TONYLABS\DigiKey\Services;
 
-class DigikeyOAuthServiceRegistry
+class DigiKeyOAuthServiceRegistry
 {
-    protected static ?DigikeyOAuthService $defaultService = null;
+    protected static ?DigiKeyOAuthService $defaultService = null;
 
-    public static function setDefault(?DigikeyOAuthService $oauthService): void
+    public static function setDefault(?DigiKeyOAuthService $oauthService): void
     {
         static::$defaultService = $oauthService;
     }
 
-    public static function getDefault(): ?DigikeyOAuthService
+    public static function getDefault(): ?DigiKeyOAuthService
     {
         if (static::$defaultService !== null) {
             return static::$defaultService;
@@ -19,8 +19,8 @@ class DigikeyOAuthServiceRegistry
 
         if (function_exists('app')) {
             try {
-                if (app()->bound(DigikeyOAuthService::class)) {
-                    return app(DigikeyOAuthService::class);
+                if (app()->bound(DigiKeyOAuthService::class)) {
+                    return app(DigiKeyOAuthService::class);
                 }
             } catch (\Throwable $exception) {
                 // Ignore container resolution issues and fall through to null return.

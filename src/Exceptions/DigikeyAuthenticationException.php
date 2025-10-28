@@ -1,8 +1,8 @@
 <?php
 
-namespace TONYLABS\Digikey\Exceptions;
+namespace TONYLABS\DigiKey\Exceptions;
 
-class DigikeyAuthenticationException extends DigikeyException
+class DigiKeyAuthenticationException extends DigiKeyException
 {
     //
 }

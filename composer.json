@@ -1,6 +1,6 @@
 {
     "name": "tonylabs/laravel-digikey",
-    "description": "Laravel package for Digikey Product Information API V4 with OAuth2 authentication",
+    "description": "Laravel package for DigiKey Product Information API V4 with OAuth2 authentication",
     "type": "library",
     "keywords": [
         "laravel",
@@ -35,7 +35,7 @@
     },
     "autoload": {
         "psr-4": {
-            "TONYLABS\\Digikey\\": "src/"
+            "TONYLABS\\DigiKey\\": "src/"
         }
     },
     "config": {
@@ -46,10 +46,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "TONYLABS\\Digikey\\DigikeyServiceProvider"
+                "TONYLABS\\DigiKey\\DigiKeyServiceProvider"
             ],
             "aliases": {
-                "Digikey": "TONYLABS\\Digikey\\Facades\\Digikey"
+                "DigiKey": "TONYLABS\\DigiKey\\Facades\\DigiKey"
             }
         }
     },

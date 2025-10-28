@@ -1,10 +1,10 @@
 <?php
 
-namespace TONYLABS\Digikey\Product;
+namespace TONYLABS\DigiKey\Product;
 
-use TONYLABS\Digikey\Services\DigikeyOAuthService;
-use TONYLABS\Digikey\Services\DigikeyOAuthServiceRegistry;
-use TONYLABS\Digikey\Exceptions\DigikeyAuthenticationException;
+use TONYLABS\DigiKey\Services\DigiKeyOAuthService;
+use TONYLABS\DigiKey\Services\DigiKeyOAuthServiceRegistry;
+use TONYLABS\DigiKey\Exceptions\DigiKeyAuthenticationException;
 
 class KeywordSearchRequest
 {
@@ -14,7 +14,7 @@ class KeywordSearchRequest
     public array $filters;
     public string $sort;
     public string $requestedQuantity;
-    protected ?DigikeyOAuthService $oauthService = null;
+    protected ?DigiKeyOAuthService $oauthService = null;
 
     public function __construct(
         string $keywords,
@@ -23,7 +23,7 @@ class KeywordSearchRequest
         array $filters = [],
         string $sort = 'PartNumber',
         string $requestedQuantity = '1',
-        ?DigikeyOAuthService $oauthService = null
+        ?DigiKeyOAuthService $oauthService = null
     ) {
         $this->keywords = $keywords;
         $this->recordCount = $recordCount;
@@ -61,7 +61,7 @@ class KeywordSearchRequest
         
         $categoryFilters = [];
         foreach ($categoryIds as $categoryId) {
-            $categoryFilters[] = ['Id' => (string)$categoryId];
+            $categoryFilters[] = ['Id' => (string) $categoryId];
         }
         
         $this->filters['FilterOptionsRequest']['CategoryFilter'] = $categoryFilters;
@@ -116,7 +116,7 @@ class KeywordSearchRequest
     /**
      * Set the OAuth service for token validation
      */
-    public function setOAuthService(DigikeyOAuthService $oauthService): self
+    public function setOAuthService(DigiKeyOAuthService $oauthService): self
     {
         $this->oauthService = $oauthService;
         return $this;
@@ -125,25 +125,25 @@ class KeywordSearchRequest
     /**
      * Validate that we have a valid access token before making the request
      * 
-     * @throws DigikeyAuthenticationException
+     * @throws DigiKeyAuthenticationException
      */
     public function validateToken(): bool
     {
         if ($this->oauthService === null) {
-            $this->oauthService = DigikeyOAuthServiceRegistry::getDefault();
+            $this->oauthService = DigiKeyOAuthServiceRegistry::getDefault();
         }
 
         if ($this->oauthService === null && function_exists('app')) {
             try {
                 // Fall back to resolving via the container when available
-                $this->oauthService = app(DigikeyOAuthService::class);
+                $this->oauthService = app(DigiKeyOAuthService::class);
             } catch (\Throwable $exception) {
                 // Leave oauthService null so we surface a clear authentication error below.
             }
         }
 
         if ($this->oauthService === null) {
-            throw new DigikeyAuthenticationException('Unable to resolve DigikeyOAuthService instance for token validation.');
+            throw new DigiKeyAuthenticationException('Unable to resolve DigiKeyOAuthService instance for token validation.');
         }
 
         if (!$this->oauthService->hasValidToken()) {
@@ -152,7 +152,7 @@ class KeywordSearchRequest
                 $this->oauthService->getAccessToken();
                 return true;
             } catch (\Exception $e) {
-                throw new DigikeyAuthenticationException(
+                throw new DigiKeyAuthenticationException(
                     'Unable to obtain valid access token: ' . $e->getMessage(),
                     0,
                     $e
@@ -196,7 +196,7 @@ class KeywordSearchRequest
         return $request;
     }
 
-    public static function fromArray(array $data, ?DigikeyOAuthService $oauthService = null): self
+    public static function fromArray(array $data, ?DigiKeyOAuthService $oauthService = null): self
     {
         $filters = [];
         if (isset($data['FilterOptionsRequest'])) {

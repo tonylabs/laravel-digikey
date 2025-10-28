@@ -1,8 +1,8 @@
 <?php
 
-namespace TONYLABS\Digikey\Exceptions;
+namespace TONYLABS\DigiKey\Exceptions;
 
-class DigikeyApiException extends DigikeyException
+class DigiKeyApiException extends DigiKeyException
 {
     protected int $statusCode;
     protected array $errorDetails;

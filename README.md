@@ -1,6 +1,6 @@
-# Laravel Digikey API Package
+# Laravel DigiKey API Package
 
-A Laravel package for integrating with the Digikey Product Information API V4. This package provides OAuth2 authentication and comprehensive access to Digikey's product search and information APIs.
+A Laravel package for integrating with the DigiKey Product Information API V4. This package provides OAuth2 authentication and comprehensive access to DigiKey's product search and information APIs.
 
 ## Requirements
 
@@ -19,12 +19,12 @@ composer require tonylabs/laravel-digikey
 Publish the configuration file:
 
 ```bash
-php artisan vendor:publish --provider="TONYLABS\Digikey\DigikeyServiceProvider"
+php artisan vendor:publish --provider="TONYLABS\DigiKey\DigiKeyServiceProvider"
 ```
 
 ## Configuration
 
-Add your Digikey API credentials to your `.env` file:
+Add your DigiKey API credentials to your `.env` file:
 
 ```env
 DIGIKEY_CLIENT_ID=your_client_id
@@ -37,74 +37,78 @@ DIGIKEY_SCOPE=productinformation
 
 ## Usage
 
+### Quick Start
+
+```php
+use TONYLABS\DigiKey\DigiKey;
+
+$digikey = new DigiKey()->setCategoryFilter(872)->setManufacturerFilter(1904);
+$results = $digikey->searchKeyword('DCP0606QTRY');
+```
+
+Calling `new DigiKey()` reads `DIGIKEY_CLIENT_ID` and `DIGIKEY_CLIENT_SECRET`
+from your configuration. You can override them explicitly:
+
+```php
+$digikey = new DigiKey(client_id: 'your_client_id', client_secret: 'your_client_secret');
+```
+
+The fluent helpers work alongside array payloads or
+`KeywordSearchRequest` instances:
+
+```php
+use TONYLABS\DigiKey\Product\KeywordSearchRequest;
+
+$request = (new KeywordSearchRequest('resistor'))
+    ->setMinimumQuantityAvailable(100);
+
+$results = (new DigiKey())->searchKeyword($request);
+```
+
+To remove previously configured helpers, call `resetFilters()`. The client
+validates and refreshes OAuth tokens automatically through the existing
+`validateToken()` flow.
+
+If you would rather control credentials directly, instantiate
+`new DigiKey(client_id: '...', client_secret: '...')` and use the instance.
+
 ### Basic Usage with Facade
 
 ```php
-use TONYLABS\Digikey\Facades\Digikey;
-use TONYLABS\Digikey\Product\KeywordSearchRequest;
+use TONYLABS\DigiKey\Facades\DigiKey;
 
-// Search for products
-$searchRequest = new KeywordSearchRequest(
-    keywords: 'resistor',
-    recordCount: 25,
-    recordStartPosition: 0
-);
+// Search for products without constructing a request object
+$results = DigiKey::searchKeyword('resistor');
 
-$results = Digikey::searchKeyword($searchRequest->toArray());
+// Optionally provide overrides using the same helper keys as DigiKey::searchKeyword
+$stockedChips = DigiKey::searchKeyword('stm32', [
+    'limit' => 50,
+    'filters' => [
+        'FilterOptionsRequest' => [
+            'MinimumQuantityAvailable' => 25,
+        ],
+    ],
+]);
 
 // Get product details
-$productDetails = Digikey::getProductDetails('296-1173-1-ND');
+$productDetails = DigiKey::getProductDetails('296-1173-1-ND');
 
 // Get manufacturers
-$manufacturers = Digikey::getManufacturers();
+$manufacturers = DigiKey::getManufacturers();
+
+// Access the lower-level array API if needed
+// $raw = DigiKey::getHttpClient();
 ```
-
-### Instantiate with Explicit Credentials
-
-If you prefer not to rely on the published configuration, you can build a
-standalone client by supplying the API credentials directly:
-
-```php
-use TONYLABS\Digikey\Services\DigikeyApiService;
-
-$digikey = DigikeyApiService::createWithCredentials(
-    clientId: 'your_client_id',
-    clientSecret: 'your_client_secret',
-);
-
-$request = KeywordSearchRequest::fromArray([
-    'Keywords' => 'resistor',
-    'RecordCount' => 10,
-]);
-
-$results = $digikey->searchKeyword(
-    $request->toArrayWithValidation()
-);
-
-$results = $digikey->searchKeyword([
-    'Keywords' => 'resistor',
-    'RecordCount' => 10,
-]);
-```
-
-Optional configuration overrides (such as toggling the sandbox URL or
-adjusting locale settings) can be passed as the third argument to
-`createWithCredentials`.
-
-When you instantiate the client with explicit credentials, any
-`KeywordSearchRequest` objects you build without manually wiring an
-OAuth service will automatically reuse the credentials supplied to
-`createWithCredentials`.
 
 ### OAuth2 Authentication
 
 The package automatically handles OAuth2 authentication using client credentials flow. Tokens are automatically obtained and cached when needed.
 
 ```php
-use TONYLABS\Digikey\Services\DigikeyOAuthService;
+use TONYLABS\DigiKey\Services\DigiKeyOAuthService;
 
 // Get access token (automatically cached)
-$oauth = app(DigikeyOAuthService::class);
+$oauth = app(DigiKeyOAuthService::class);
 $accessToken = $oauth->getAccessToken();
 
 // Check if we have a valid cached token
@@ -116,7 +120,7 @@ $oauth->clearCachedToken();
 
 ## API Methods
 
-- `searchKeyword(array $searchRequest)` - Search for products using keywords
+- `searchKeyword(string|array|KeywordSearchRequest $search, array $options = [])` - Search for products using keywords
 - `getProductDetails(string $productNumber)` - Get detailed product information
 - `getManufacturers()` - Get list of manufacturers
 - `getCategories()` - Get list of categories

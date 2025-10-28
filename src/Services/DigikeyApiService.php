@@ -1,10 +1,10 @@
 <?php
 
-namespace TONYLABS\Digikey\Services;
+namespace TONYLABS\DigiKey\Services;
 
-class DigikeyApiService {
-    protected DigikeyHttpClient $client;
-    public function __construct(DigikeyHttpClient $client)
+class DigiKeyApiService {
+    protected DigiKeyHttpClient $client;
+    public function __construct(DigiKeyHttpClient $client)
     {
         $this->client = $client;
     }
@@ -131,7 +131,7 @@ class DigikeyApiService {
     /**
      * Get the underlying HTTP client
      */
-    public function getHttpClient(): DigikeyHttpClient
+    public function getHttpClient(): DigiKeyHttpClient
     {
         return $this->client;
     }
@@ -139,23 +139,9 @@ class DigikeyApiService {
     /**
      * Get OAuth service through HTTP client
      */
-    public function getOAuthService(): DigikeyOAuthService
+    public function getOAuthService(): DigiKeyOAuthService
     {
         return $this->client->getOAuthService();
-    }
-
-    /**
-     * Create a Digikey API service instance with explicit credentials.
-     */
-    public static function createWithCredentials(string $client_id, string $client_secret, array $configOverrides = []): self
-    {
-        $config = static::resolveConfiguration($configOverrides);
-        $config['client_id'] = $client_id;
-        $config['client_secret'] = $client_secret;
-        $objOAuthService = new DigikeyOAuthService($config);
-        DigikeyOAuthServiceRegistry::setDefault($objOAuthService);
-        $objClient = new DigikeyHttpClient($objOAuthService, $config);
-        return new self($objClient);
     }
 
     /**

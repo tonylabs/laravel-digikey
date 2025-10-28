@@ -1,10 +1,10 @@
 <?php
 
-namespace TONYLABS\Digikey\Exceptions;
+namespace TONYLABS\DigiKey\Exceptions;
 
 use Exception;
 
-class DigikeyException extends Exception
+class DigiKeyException extends Exception
 {
     //
 }

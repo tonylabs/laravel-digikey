@@ -1,6 +1,6 @@
 <?php
 
-namespace TONYLABS\Digikey\Product;
+namespace TONYLABS\DigiKey\Product;
 
 class SearchResponse
 {

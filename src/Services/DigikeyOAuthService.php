@@ -1,13 +1,13 @@
 <?php
 
-namespace TONYLABS\Digikey\Services;
+namespace TONYLABS\DigiKey\Services;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Facades\Cache;
-use TONYLABS\Digikey\Exceptions\DigikeyAuthenticationException;
+use TONYLABS\DigiKey\Exceptions\DigiKeyAuthenticationException;
 
-class DigikeyOAuthService
+class DigiKeyOAuthService
 {
     protected Client $client;
     protected array $config;
@@ -28,6 +28,7 @@ class DigikeyOAuthService
     /**
      * Get access token using client credentials flow
      * This is the primary method for obtaining tokens
+     * @throws DigiKeyAuthenticationException
      */
     public function getAccessToken(): string
     {
@@ -43,17 +44,20 @@ class DigikeyOAuthService
                 'client_secret' => $this->config['client_secret'],
             ];
 
+            /*
             $scope = $this->resolveScope();
             if ($scope !== null) {
                 $formParams['scope'] = $scope;
             }
+            */
 
             $response = $this->client->post($this->config['oauth']['token_url'], [
                 'form_params' => $formParams,
             ]);
+
             $body = json_decode($response->getBody()->getContents());
             if (!isset($body->access_token)) {
-                throw new DigikeyAuthenticationException('Invalid token response: access_token not found');
+                throw new DigiKeyAuthenticationException('Invalid token response: access_token not found');
             }
             $expiresIn = isset($body->expires_in) ? (int) $body->expires_in : 0;
             if ($expiresIn <= 0) {
@@ -65,13 +69,14 @@ class DigikeyOAuthService
             return $body->access_token;
 
         } catch (GuzzleException $e) {
-            throw new DigikeyAuthenticationException('Failed to obtain access token: ' . $e->getMessage(), 0, $e);
+            throw new DigiKeyAuthenticationException('Failed to obtain access token: ' . $e->getMessage(), 0, $e);
         }
     }
 
     /**
      * Get cached access token or obtain a new one
      * Alias for getAccessToken() for backward compatibility
+     * @throws DigiKeyAuthenticationException
      */
     public function getValidAccessToken(): string
     {
@@ -106,7 +111,6 @@ class DigikeyOAuthService
         if (!$clientId) {
             return $baseKey;
         }
-
         return $baseKey . ':' . sha1($clientId);
     }
 
@@ -118,22 +122,17 @@ class DigikeyOAuthService
         if (!isset($this->config['oauth']['scope'])) {
             return null;
         }
-
         $scope = $this->config['oauth']['scope'];
-
         if (is_string($scope)) {
             $scope = trim($scope);
             return $scope === '' ? null : $scope;
         }
-
         if (is_array($scope)) {
             $normalised = array_filter(array_map(static function ($value) {
                 return is_string($value) ? trim($value) : '';
             }, $scope));
-
             return empty($normalised) ? null : implode(' ', $normalised);
         }
-
         return null;
     }
 }

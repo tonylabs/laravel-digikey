@@ -1,21 +1,21 @@
 <?php
 
-namespace TONYLABS\Digikey\Services;
+namespace TONYLABS\DigiKey\Services;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\ServerException;
-use TONYLABS\Digikey\Exceptions\DigikeyApiException;
-use TONYLABS\Digikey\Exceptions\DigikeyAuthenticationException;
+use TONYLABS\DigiKey\Exceptions\DigiKeyApiException;
+use TONYLABS\DigiKey\Exceptions\DigiKeyAuthenticationException;
 use Psr\Http\Message\ResponseInterface;
 
-class DigikeyHttpClient
+class DigiKeyHttpClient
 {
     protected array $config;
     protected Client $client;
-    protected DigikeyOAuthService $oauthService;
-    public function __construct(DigikeyOAuthService $oauthService, array $config)
+    protected DigiKeyOAuthService $oauthService;
+    public function __construct(DigiKeyOAuthService $oauthService, array $config)
     {
         $this->config = $config;
         $this->oauthService = $oauthService;
@@ -37,6 +37,8 @@ class DigikeyHttpClient
 
     /**
      * Make a GET request
+     * @throws DigiKeyApiException
+     * @throws DigiKeyAuthenticationException
      */
     public function get(string $endpoint, array $query = [], array $headers = []): object
     {
@@ -48,6 +50,8 @@ class DigikeyHttpClient
 
     /**
      * Make a POST request
+     * @throws DigiKeyApiException
+     * @throws DigiKeyAuthenticationException
      */
     public function post(string $endpoint, array $data = [], array $headers = []): object
     {
@@ -59,6 +63,8 @@ class DigikeyHttpClient
 
     /**
      * Make a PUT request
+     * @throws DigiKeyApiException
+     * @throws DigiKeyAuthenticationException
      */
     public function put(string $endpoint, array $data = [], array $headers = []): object
     {
@@ -70,6 +76,8 @@ class DigikeyHttpClient
 
     /**
      * Make a DELETE request
+     * @throws DigiKeyApiException
+     * @throws DigiKeyAuthenticationException
      */
     public function delete(string $endpoint, array $headers = []): object
     {
@@ -80,6 +88,7 @@ class DigikeyHttpClient
 
     /**
      * Make an HTTP request
+     * @throws DigiKeyApiException
      */
     protected function makeRequest(string $method, string $endpoint, array $options = []): object
     {
@@ -95,12 +104,15 @@ class DigikeyHttpClient
         } catch (ServerException $e) {
             $this->handleServerException($e);
         } catch (GuzzleException $e) {
-            throw new DigikeyApiException('HTTP request failed: ' . $e->getMessage(), 0, [], $e);
+            throw new DigiKeyApiException('HTTP request failed: ' . $e->getMessage(), 0, [], $e);
+        } catch (DigiKeyApiException $e) {
+            throw new DigiKeyApiException('HTTP request failed: ' . $e->getMessage(), 0, [], $e);
         }
     }
 
     /**
      * Prepare headers with authentication
+     * @throws DigiKeyAuthenticationException
      */
     protected function headers(array $headers = []): array
     {
@@ -108,7 +120,7 @@ class DigikeyHttpClient
             $accessToken = $this->oauthService->getValidAccessToken();
             $headers['Authorization'] = 'Bearer ' . $accessToken;
         } catch (\Exception $e) {
-            throw new DigikeyAuthenticationException('Failed to obtain access token: ' . $e->getMessage(), 0, $e);
+            throw new DigiKeyAuthenticationException('Failed to obtain access token: ' . $e->getMessage(), 0, $e);
         }
         if (!empty($this->config['customer_id'])) {
             $headers['X-DIGIKEY-Customer-Id'] = $this->config['customer_id'];
@@ -124,7 +136,7 @@ class DigikeyHttpClient
         $content = $response->getBody()->getContents();
         $data = json_decode($content, false); // false = return objects instead of arrays
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new DigikeyApiException('Invalid JSON response: ' . json_last_error_msg());
+            throw new DigiKeyApiException('Invalid JSON response: ' . json_last_error_msg());
         }
         $responseData = $data ?? new \stdClass();
         $rateLimitHeaders = $this->extractRateLimitHeaders($response);
@@ -167,9 +179,9 @@ class DigikeyHttpClient
         $message = $errorData['message'] ?? $errorData['error_description'] ?? 'Client error occurred';
         if ($statusCode === 401) {
             $this->oauthService->clearCachedToken();
-            throw new DigikeyAuthenticationException($message, $statusCode, $errorData, $e);
+            throw new DigiKeyAuthenticationException($message, $statusCode, $errorData, $e);
         }
-        throw new DigikeyApiException($message, $statusCode, $errorData, $e);
+        throw new DigiKeyApiException($message, $statusCode, $errorData, $e);
     }
 
     /**
@@ -182,7 +194,7 @@ class DigikeyHttpClient
         $content = $response->getBody()->getContents();
         $errorData = json_decode($content, true) ?? [];
         $message = $errorData['message'] ?? 'Server error occurred';
-        throw new DigikeyApiException($message, $statusCode, $errorData, $e);
+        throw new DigiKeyApiException($message, $statusCode, $errorData, $e);
     }
 
     /**
@@ -196,7 +208,7 @@ class DigikeyHttpClient
     /**
      * Get the OAuth service
      */
-    public function getOAuthService(): DigikeyOAuthService
+    public function getOAuthService(): DigiKeyOAuthService
     {
         return $this->oauthService;
     }

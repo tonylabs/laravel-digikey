@@ -1,14 +1,15 @@
 <?php
 
-namespace TONYLABS\Digikey;
+namespace TONYLABS\DigiKey;
 
 use Illuminate\Support\ServiceProvider;
-use TONYLABS\Digikey\Services\DigikeyApiService;
-use TONYLABS\Digikey\Services\DigikeyHttpClient;
-use TONYLABS\Digikey\Services\DigikeyOAuthService;
-use TONYLABS\Digikey\Services\DigikeyOAuthServiceRegistry;
+use TONYLABS\DigiKey\DigiKey;
+use TONYLABS\DigiKey\Services\DigiKeyApiService;
+use TONYLABS\DigiKey\Services\DigiKeyHttpClient;
+use TONYLABS\DigiKey\Services\DigiKeyOAuthService;
+use TONYLABS\DigiKey\Services\DigiKeyOAuthServiceRegistry;
 
-class DigikeyServiceProvider extends ServiceProvider
+class DigiKeyServiceProvider extends ServiceProvider
 {
     /**
      * Register services.
@@ -19,29 +20,35 @@ class DigikeyServiceProvider extends ServiceProvider
             __DIR__.'/../config/digikey.php', 'digikey'
         );
 
-        $this->app->singleton(DigikeyOAuthService::class, function ($app) {
-            $service = new DigikeyOAuthService(
+        $this->app->singleton(DigiKeyOAuthService::class, function ($app) {
+            $service = new DigiKeyOAuthService(
                 $app['config']['digikey']
             );
-            DigikeyOAuthServiceRegistry::setDefault($service);
+            DigiKeyOAuthServiceRegistry::setDefault($service);
 
             return $service;
         });
 
-        $this->app->singleton(DigikeyHttpClient::class, function ($app) {
-            return new DigikeyHttpClient(
-                $app->make(DigikeyOAuthService::class),
+        $this->app->singleton(DigiKeyHttpClient::class, function ($app) {
+            return new DigiKeyHttpClient(
+                $app->make(DigiKeyOAuthService::class),
                 $app['config']['digikey']
             );
         });
 
-        $this->app->singleton(DigikeyApiService::class, function ($app) {
-            return new DigikeyApiService(
-                $app->make(DigikeyHttpClient::class)
+        $this->app->singleton(DigiKeyApiService::class, function ($app) {
+            return new DigiKeyApiService(
+                $app->make(DigiKeyHttpClient::class)
             );
         });
 
-        $this->app->alias(DigikeyApiService::class, 'digikey');
+        $this->app->alias(DigiKeyApiService::class, 'digikey.api');
+
+        $this->app->singleton(DigiKey::class, function () {
+            return new DigiKey();
+        });
+
+        $this->app->alias(DigiKey::class, 'digikey');
     }
 
     /**
@@ -50,8 +57,9 @@ class DigikeyServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->publishes([__DIR__.'/../config/digikey.php' => config_path('digikey.php'),
-    ]);
+            $this->publishes([
+                __DIR__.'/../config/digikey.php' => config_path('digikey.php'),
+            ]);
         }
     }
 }

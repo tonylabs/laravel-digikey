@@ -1,30 +1,29 @@
 <?php
 
-namespace TONYLABS\Digikey\Facades;
+namespace TONYLABS\DigiKey\Facades;
 
 use Illuminate\Support\Facades\Facade;
-use TONYLABS\Digikey\Product\KeywordSearchRequest;
-use TONYLABS\Digikey\Product\SearchResponse;
-use TONYLABS\Digikey\Services\DigikeyHttpClient;
-use TONYLABS\Digikey\Services\DigikeyOAuthService;
+use TONYLABS\DigiKey\Product\KeywordSearchRequest;
+use TONYLABS\DigiKey\Services\DigiKeyHttpClient;
+use TONYLABS\DigiKey\Services\DigiKeyOAuthService;
 
 /**
- * @method static array searchKeyword(array $searchRequest)
- * @method static array getProductDetails(string $productNumber, array $includes = [], array $excludes = [])
- * @method static array getManufacturers()
- * @method static array getCategories()
- * @method static array getCategoryDetails(int $categoryId)
- * @method static array getDigiReelPricing(string $productNumber, int $requestedQuantity)
- * @method static array getRecommendedProducts(string $productNumber)
- * @method static array getProductSubstitutions(string $productNumber)
- * @method static array getProductAssociations(string $productNumber)
- * @method static array getPackageTypeByQuantity(string $productNumber, int $requestedQuantity)
+ * @method static object searchKeyword(string|array|KeywordSearchRequest $search, array $options = [])
+ * @method static object getProductDetails(string $productNumber, array $includes = [], array $excludes = [])
+ * @method static object getManufacturers()
+ * @method static object getCategories()
+ * @method static object getCategoryDetails(int $categoryId)
+ * @method static object getDigiReelPricing(string $productNumber, int $requestedQuantity)
+ * @method static object getRecommendedProducts(string $productNumber)
+ * @method static object getProductSubstitutions(string $productNumber)
+ * @method static object getProductAssociations(string $productNumber)
+ * @method static object getPackageTypeByQuantity(string $productNumber, int $requestedQuantity)
  * @method static array getProductMedia(string $productNumber)
  * @method static array getProductPricing(string $productNumber, int $requestedQuantity)
- * @method static DigikeyHttpClient getHttpClient()
- * @method static DigikeyOAuthService getOAuthService()
+ * @method static DigiKeyHttpClient getHttpClient()
+ * @method static DigiKeyOAuthService getOAuthService()
  */
-class Digikey extends Facade
+class DigiKey extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
