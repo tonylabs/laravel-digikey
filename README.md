@@ -45,6 +45,9 @@ use TONYLABS\DigiKey\DigiKey;
 $digikey = (new DigiKey())
     ->setCategoryFilter(872)
     ->setManufacturerFilter(1904)
+    ->setLocaleLanguage('en')
+    ->setLocaleCurrency('USD')
+    ->setLocaleSite('US')
     ->setLimit(50)
     ->setOffset(100);
 
@@ -85,6 +88,8 @@ $results = (new DigiKey())->searchKeyword($request);
 To remove previously configured helpers, call `resetFilters()`. Use `resetPagination()` to clear any fluent limit or offset. The client
 validates and refreshes OAuth tokens automatically through the existing
 `validateToken()` flow.
+
+Locale overrides may be cleared with `resetLocale()` which reverts to the configuration defaults.
 
 If you would rather control credentials directly, instantiate
 `new DigiKey(client_id: '...', client_secret: '...')` and use the instance.

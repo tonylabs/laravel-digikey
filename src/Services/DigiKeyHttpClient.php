@@ -15,11 +15,18 @@ class DigiKeyHttpClient
     protected array $config;
     protected Client $client;
     protected DigiKeyOAuthService $oauthService;
+    protected string $localeLanguage;
+    protected string $localeCurrency;
+    protected string $localeSite;
     public function __construct(DigiKeyOAuthService $oauthService, array $config)
     {
         $this->config = $config;
         $this->oauthService = $oauthService;
         $uri = $config['use_sandbox'] ? $config['sandbox_url'] : $config['base_url'];
+        $this->localeSite = $config['locale']['site'] ?? 'US';
+        $this->localeLanguage = $config['locale']['language'] ?? 'en';
+        $this->localeCurrency = $config['locale']['currency'] ?? 'USD';
+
         $this->client = new Client([
             'base_uri' => $uri,
             'timeout' => $config['http']['timeout'] ?? 30,
@@ -28,11 +35,30 @@ class DigiKeyHttpClient
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
                 'X-DIGIKEY-Client-Id' => $config['client_id'],
-                'X-DIGIKEY-Locale-Site' => $config['locale']['site'] ?? 'US',
-                'X-DIGIKEY-Locale-Language' => $config['locale']['language'] ?? 'en',
-                'X-DIGIKEY-Locale-Currency' => $config['locale']['currency'] ?? 'USD',
             ],
         ]);
+    }
+
+    public function setLocaleLanguage(string $language): void
+    {
+        $this->localeLanguage = $language;
+    }
+
+    public function setLocaleCurrency(string $currency): void
+    {
+        $this->localeCurrency = $currency;
+    }
+
+    public function setLocaleSite(string $site): void
+    {
+        $this->localeSite = $site;
+    }
+
+    public function resetLocale(): void
+    {
+        $this->localeSite = $this->config['locale']['site'] ?? 'US';
+        $this->localeLanguage = $this->config['locale']['language'] ?? 'en';
+        $this->localeCurrency = $this->config['locale']['currency'] ?? 'USD';
     }
 
     /**
@@ -122,6 +148,10 @@ class DigiKeyHttpClient
         } catch (\Exception $e) {
             throw new DigiKeyAuthenticationException('Failed to obtain access token: ' . $e->getMessage(), 0, $e);
         }
+        $headers['X-DIGIKEY-Locale-Language'] = $this->localeLanguage;
+        $headers['X-DIGIKEY-Locale-Currency'] = $this->localeCurrency;
+        $headers['X-DIGIKEY-Locale-Site'] = $this->localeSite;
+
         if (!empty($this->config['customer_id'])) {
             $headers['X-DIGIKEY-Customer-Id'] = $this->config['customer_id'];
         }

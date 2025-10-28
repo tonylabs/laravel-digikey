@@ -165,4 +165,28 @@ class DigiKey extends DigiKeyApiService
         $this->offset = max(0, $offset);
         return $this;
     }
+
+    public function setLocaleLanguage(string $language): self
+    {
+        $this->getHttpClient()->setLocaleLanguage($language);
+        return $this;
+    }
+
+    public function setLocaleCurrency(string $currency): self
+    {
+        $this->getHttpClient()->setLocaleCurrency($currency);
+        return $this;
+    }
+
+    public function setLocaleSite(string $site): self
+    {
+        $this->getHttpClient()->setLocaleSite($site);
+        return $this;
+    }
+
+    public function resetLocale(): self
+    {
+        $this->getHttpClient()->resetLocale();
+        return $this;
+    }
 }
