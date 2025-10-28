@@ -3,7 +3,6 @@
 namespace TONYLABS\DigiKey;
 
 use Illuminate\Support\ServiceProvider;
-use TONYLABS\DigiKey\DigiKey;
 use TONYLABS\DigiKey\Services\DigiKeyApiService;
 use TONYLABS\DigiKey\Services\DigiKeyHttpClient;
 use TONYLABS\DigiKey\Services\DigiKeyOAuthService;

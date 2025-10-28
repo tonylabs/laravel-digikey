@@ -42,19 +42,36 @@ DIGIKEY_SCOPE=productinformation
 ```php
 use TONYLABS\DigiKey\DigiKey;
 
-$digikey = new DigiKey()->setCategoryFilter(872)->setManufacturerFilter(1904);
+$digikey = (new DigiKey())
+    ->setCategoryFilter(872)
+    ->setManufacturerFilter(1904)
+    ->setLimit(50)
+    ->setOffset(100);
+
 $results = $digikey->searchKeyword('DCP0606QTRY');
+
+// Per-call overrides still work as before
+$results = $digikey->searchKeyword('DCP0606QTRY', [
+    'limit' => 25,
+    'offset' => 0,
+]);
+
+// Pure category/manufacturer browse (no keywords)
+$results = (new DigiKey())
+    ->setCategoryFilter(872)
+    ->setManufacturerFilter(1904)
+    ->searchKeyword(null, [
+        'limit' => 25,
+    ]);
 ```
 
-Calling `new DigiKey()` reads `DIGIKEY_CLIENT_ID` and `DIGIKEY_CLIENT_SECRET`
-from your configuration. You can override them explicitly:
+Calling `new DigiKey()` reads `DIGIKEY_CLIENT_ID` and `DIGIKEY_CLIENT_SECRET` from your configuration. You can override them explicitly:
 
 ```php
 $digikey = new DigiKey(client_id: 'your_client_id', client_secret: 'your_client_secret');
 ```
 
-The fluent helpers work alongside array payloads or
-`KeywordSearchRequest` instances:
+The fluent helpers work alongside array payloads or `KeywordSearchRequest` instances:
 
 ```php
 use TONYLABS\DigiKey\Product\KeywordSearchRequest;
@@ -65,7 +82,7 @@ $request = (new KeywordSearchRequest('resistor'))
 $results = (new DigiKey())->searchKeyword($request);
 ```
 
-To remove previously configured helpers, call `resetFilters()`. The client
+To remove previously configured helpers, call `resetFilters()`. Use `resetPagination()` to clear any fluent limit or offset. The client
 validates and refreshes OAuth tokens automatically through the existing
 `validateToken()` flow.
 
