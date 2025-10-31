@@ -12,8 +12,9 @@ class KeywordSearchRequest
     public int $recordCount;
     public int $recordStartPosition;
     public array $filters;
-    public string $sort;
     public string $requestedQuantity;
+    protected ?SortField $sortField;
+    protected ?SortOrder $sortOrder;
     protected ?DigiKeyOAuthService $oauthService = null;
 
     public function __construct(
@@ -21,17 +22,19 @@ class KeywordSearchRequest
         int $recordCount = 25,
         int $recordStartPosition = 0,
         array $filters = [],
-        string $sort = 'PartNumber',
+        SortField|string|null $sortField = null,
         string $requestedQuantity = '1',
-        ?DigiKeyOAuthService $oauthService = null
+        ?DigiKeyOAuthService $oauthService = null,
+        SortOrder|string|null $sortOrder = null
     ) {
         $this->keywords = $keywords;
         $this->recordCount = $recordCount;
         $this->recordStartPosition = $recordStartPosition;
         $this->filters = $filters;
-        $this->sort = $sort;
         $this->requestedQuantity = $requestedQuantity;
         $this->oauthService = $oauthService;
+        $this->sortField = $this->resolveSortField($sortField);
+        $this->sortOrder = $this->resolveSortOrder($sortOrder);
     }
 
     /**
@@ -186,11 +189,21 @@ class KeywordSearchRequest
             $request['FilterOptionsRequest'] = $this->filters['FilterOptionsRequest'];
         }
 
-        // Add SortOptions if sort is specified
-        if ($this->sort !== 'PartNumber') {
-            $request['SortOptions'] = [
-                'SortBy' => $this->sort
-            ];
+        // Add SortOptions if configured
+        if ($this->sortField !== null || $this->sortOrder !== null) {
+            $sortOptions = [];
+
+            if ($this->sortField !== null) {
+                $sortOptions['Field'] = $this->sortField->value;
+            }
+
+            if ($this->sortOrder !== null) {
+                $sortOptions['SortOrder'] = $this->sortOrder->value;
+            }
+
+            if (!empty($sortOptions)) {
+                $request['SortOptions'] = $sortOptions;
+            }
         }
 
         return $request;
@@ -203,19 +216,50 @@ class KeywordSearchRequest
             $filters['FilterOptionsRequest'] = $data['FilterOptionsRequest'];
         }
 
-        $sort = 'PartNumber';
-        if (isset($data['SortOptions']['SortBy'])) {
-            $sort = $data['SortOptions']['SortBy'];
+        $sortField = null;
+        if (isset($data['SortOptions']['Field'])) {
+            $sortField = $data['SortOptions']['Field'];
+        } elseif (isset($data['SortOptions']['SortBy'])) {
+            $sortField = $data['SortOptions']['SortBy'];
         }
+
+        $sortOrder = $data['SortOptions']['SortOrder'] ?? null;
 
         return new self(
             $data['Keywords'] ?? '',
             $data['Limit'] ?? $data['RecordCount'] ?? 25,
             $data['Offset'] ?? $data['RecordStartPosition'] ?? 0,
             $filters,
-            $sort,
+            $sortField,
             $data['RequestedQuantity'] ?? '1',
-            $oauthService
+            $oauthService,
+            $sortOrder
         );
+    }
+
+    protected function resolveSortField(SortField|string|null $sortField): ?SortField
+    {
+        if ($sortField === null) {
+            return null;
+        }
+
+        if ($sortField instanceof SortField) {
+            return $sortField;
+        }
+
+        return SortField::fromValue($sortField);
+    }
+
+    protected function resolveSortOrder(SortOrder|string|null $sortOrder): ?SortOrder
+    {
+        if ($sortOrder === null) {
+            return null;
+        }
+
+        if ($sortOrder instanceof SortOrder) {
+            return $sortOrder;
+        }
+
+        return SortOrder::fromValue($sortOrder);
     }
 }

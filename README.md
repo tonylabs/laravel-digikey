@@ -41,6 +41,8 @@ DIGIKEY_SCOPE=productinformation
 
 ```php
 use TONYLABS\DigiKey\DigiKey;
+use TONYLABS\DigiKey\Product\SortField;
+use TONYLABS\DigiKey\Product\SortOrder;
 
 $digikey = (new DigiKey())
     ->setCategoryFilter(872)
@@ -49,7 +51,8 @@ $digikey = (new DigiKey())
     ->setLocaleCurrency('USD')
     ->setLocaleSite('US')
     ->setLimit(50)
-    ->setOffset(100);
+    ->setOffset(100)
+    ->setOrder(SortField::QuantityAvailable, SortOrder::Descending);
 
 $results = $digikey->searchKeyword('DCP0606QTRY');
 
@@ -63,10 +66,13 @@ $results = $digikey->searchKeyword('DCP0606QTRY', [
 $results = (new DigiKey())
     ->setCategoryFilter(872)
     ->setManufacturerFilter(1904)
+    ->setOrder(SortField::Price, SortOrder::Ascending)
     ->searchKeyword(null, [
         'limit' => 25,
     ]);
 ```
+
+`setOrder()` accepts either the `SortField`/`SortOrder` enums shown above or plain strings (e.g. `'QuantityAvailable'`, `'descending'`).
 
 Calling `new DigiKey()` reads `DIGIKEY_CLIENT_ID` and `DIGIKEY_CLIENT_SECRET` from your configuration. You can override them explicitly:
 

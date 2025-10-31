@@ -4,6 +4,8 @@ namespace TONYLABS\DigiKey;
 
 use InvalidArgumentException;
 use TONYLABS\DigiKey\Product\KeywordSearchRequest;
+use TONYLABS\DigiKey\Product\SortField;
+use TONYLABS\DigiKey\Product\SortOrder;
 use TONYLABS\DigiKey\Services\DigiKeyApiService;
 use TONYLABS\DigiKey\Services\DigiKeyHttpClient;
 use TONYLABS\DigiKey\Services\DigiKeyOAuthService;
@@ -15,6 +17,8 @@ class DigiKey extends DigiKeyApiService
     protected ?string $manufacturerFilter = null;
     protected ?int $limit = null;
     protected ?int $offset = null;
+    protected ?SortField $sortField = null;
+    protected ?SortOrder $sortOrder = null;
 
     public function __construct(
         ?string $client_id = null,
@@ -62,6 +66,16 @@ class DigiKey extends DigiKeyApiService
                 $search['Offset'] = $this->offset;
             }
 
+            if ($this->sortField !== null || $this->sortOrder !== null) {
+                $search['SortOptions'] ??= [];
+                if ($this->sortField !== null) {
+                    $search['SortOptions']['Field'] = $this->sortField->value;
+                }
+                if ($this->sortOrder !== null) {
+                    $search['SortOptions']['SortOrder'] = $this->sortOrder->value;
+                }
+            }
+
             if ($this->categoryFilter !== null) {
                 $search['FilterOptionsRequest'] ??= [];
                 $categoryFilters = $search['FilterOptionsRequest']['CategoryFilter'] ?? [];
@@ -100,7 +114,8 @@ class DigiKey extends DigiKeyApiService
         $keywords = $search;
         $recordCount = $options['limit'] ?? $options['recordCount'] ?? $this->limit ?? 25;
         $recordStart = $options['offset'] ?? $options['recordStartPosition'] ?? $this->offset ?? 0;
-        $sort = $options['sort'] ?? 'PartNumber';
+        $sortField = $this->sortField ?? $this->resolveSortField($options['sort'] ?? null);
+        $sortOrder = $this->sortOrder ?? ($this->normalizeSortOrder($options['sort_order'] ?? $options['sortOrder'] ?? null));
         $requestedQuantity = (string) ($options['requested_quantity'] ?? $options['requestedQuantity'] ?? '1');
 
         $filters = $options['filters'] ?? [];
@@ -110,9 +125,10 @@ class DigiKey extends DigiKeyApiService
             recordCount: $recordCount,
             recordStartPosition: $recordStart,
             filters: $filters,
-            sort: $sort,
+            sortField: $sortField,
             requestedQuantity: $requestedQuantity,
-            oauthService: $this->getOAuthService()
+            oauthService: $this->getOAuthService(),
+            sortOrder: $sortOrder
         );
 
         if ($this->categoryFilter !== null) {
@@ -166,6 +182,21 @@ class DigiKey extends DigiKeyApiService
         return $this;
     }
 
+    public function setOrder(SortField|string $field, SortOrder|string $direction = SortOrder::Ascending): self
+    {
+        $this->sortField = $this->resolveSortField($field);
+        $this->sortOrder = $this->normalizeSortOrder($direction);
+
+        return $this;
+    }
+
+    public function resetOrder(): self
+    {
+        $this->sortField = null;
+        $this->sortOrder = null;
+        return $this;
+    }
+
     public function setLocaleLanguage(string $language): self
     {
         $this->getHttpClient()->setLocaleLanguage($language);
@@ -188,5 +219,36 @@ class DigiKey extends DigiKeyApiService
     {
         $this->getHttpClient()->resetLocale();
         return $this;
+    }
+
+    protected function normalizeSortOrder(SortOrder|string|null $order): ?SortOrder
+    {
+        if ($order === null) {
+            return null;
+        }
+
+        if ($order instanceof SortOrder) {
+            return $order;
+        }
+
+        return SortOrder::fromValue($order);
+    }
+
+    protected function resolveSortField(SortField|string|null $field): ?SortField
+    {
+        if ($field === null) {
+            return null;
+        }
+
+        if ($field instanceof SortField) {
+            return $field;
+        }
+
+        $trimmed = trim($field);
+        if ($trimmed === '') {
+            throw new InvalidArgumentException('Sort field cannot be empty.');
+        }
+
+        return SortField::fromValue($trimmed);
     }
 }
